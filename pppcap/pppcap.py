@@ -610,7 +610,7 @@ if WIN32:
     MODE_CAPT = 0
     MODE_STAT = 1
     MODE_MON = 2
-    
+
 elif MSDOS:
     """
     MSDOS definitions
@@ -643,7 +643,98 @@ else:
     pcap_get_selectable_fd.restype = c_int
     pcap_get_selectable_fd.argtype = [POINTER(pcap_t)]
 
-# TODO
-#   See: #include <remote-ext.h>
+#ifdef HAVE_REMOTE
+# /* Includes most of the public stuff that is needed for the remote capture */
+#include <remote-ext.h>
 if HAVE_REMOTE:
-    pass
+    
+    PCAP_BUF_SIZE = 1024
+    PCAP_SRC_FILE = 2
+    PCAP_SRC_IFLOCAL = 3
+    PCAP_SRC_IFREMOTE = 4
+
+    PCAP_SRC_FILE_STRING = "file://"
+    PCAP_SRC_IF_STRING = "rpcap://"
+
+    PCAP_OPENFLAG_PROMISCUOUS = 1
+    PCAP_OPENFLAG_DATATX_UDP = 2
+    PCAP_OPENFLAG_NOCAPTURE_RPCAP = 4
+    PCAP_OPENFLAG_NOCAPTURE_LOCAL = 8
+    PCAP_OPENFLAG_MAX_RESPONSIVENESS = 16
+
+    PCAP_SAMP_NOSAMP = 0
+    PCAP_SAMP_1_EVERY_N = 1
+    PCAP_SAMP_FIRST_AFTER_N_MS = 2
+
+    RPCAP_RMTAUTH_NULL = 0
+    RPCAP_RMTAUTH_PWD = 1
+
+    class pcap_rmtauth(Structure):
+        _fields_=[("type", c_int),
+                  ("username", c_char_p),
+                  ("password", c_char_p),
+    ]
+
+    class pcap_samp(Structure):
+        _fields_=[("method", c_int),
+                  ("value", c_char_p),
+    ]
+
+    RPCAP_HOSTLIST_SIZE = 1024
+
+    """
+    \name New WinPcap functions
+
+	This section lists the new functions that are able to help considerably in writing
+	WinPcap programs because of their easiness of use.
+    """
+    # pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf);
+    pcap_open = _pcap.pcap_open
+    pcap_open.restype = POINTER(pcap_t)
+    pcap_open.argtypes = [c_char_p, c_int, c_int, c_int, POINTER(pcap_rmtauth), c_char_p]
+
+    # int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf);
+    pcap_createsrcstr = _pcap.pcap_createsrcstr
+    pcap_createsrcstr.restype = c_int
+    pcap_createsrcstr.argtypes = [c_char_p, c_int, c_char_p, c_char_p, c_char_p, c_char_p]
+
+    # int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf);
+    pcap_parsesrcstr = _pcap.pcap_parsesrcstr
+    pcap_parsesrcstr.restype = c_int
+    pcap_parsesrcstr.argtypes = [c_char_p, POINTER(c_int), c_char_p, c_char_p, c_char_p, c_char_p]
+
+    # int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
+    pcap_findalldevs_ex = _pcap.pcap_findalldevs_ex
+    pcap_findalldevs_ex.restype = c_int
+    pcap_findalldevs_ex.argtypes = [c_char_p, POINTER(pcap_rmtauth), POINTER(POINTER(pcap_if_t)), c_char_p]
+
+    # struct pcap_samp *pcap_setsampling(pcap_t *p);
+    pcap_setsampling = _pcap.pcap_setsampling
+    pcap_setsampling.restype = pcap_samp
+    pcap_setsampling.argtypes = [POINTER(pcap_t)]
+
+
+    """
+    \name Remote Capture functions
+    """
+    SOCKET = c_int
+    # SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
+    pcap_remoteact_accept = _pcap.pcap_remoteact_accept
+    pcap_remoteact_accept.restype = SOCKET
+    pcap_remoteact_accept.argtypes = [c_char_p, c_char_p, c_char_p, c_char_p, POINTER(pcap_rmtauth), c_char_p]
+
+    # int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf);
+    pcap_remoteact_list = _pcap.pcap_remoteact_list
+    pcap_remoteact_list.restype = c_int
+    pcap_remoteact_list.argtypes = [c_char_p, c_char, c_int, c_char_p]
+
+    # int pcap_remoteact_close(const char *host, char *errbuf);
+    pcap_remoteact_close = _pcap.pcap_remoteact_close
+    pcap_remoteact_close.restype = c_int
+    pcap_remoteact_close.argtypes = [c_char_p, c_char_p]
+
+    # void pcap_remoteact_cleanup();
+    pcap_remoteact_cleanup = _pcap.pcap_remoteact_cleanup
+    pcap_remoteact_cleanup.restype = None
+    pcap_remoteact_cleanup.argtypes = None
+

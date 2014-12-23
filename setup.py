@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
     name="pppcap",
-    version="1.0",
+    version="0.1",
     author="Ruy",
     author_email="ruy.suzu7(at)gmail.com",
     url="https://github.com/ainoniwa/pppcap",

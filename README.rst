@@ -9,7 +9,7 @@ pppcap is pure python wrapper for libpcap/winpcap.
 Requirement
 =======================================================================
 * winpcap (Windows)
-* libpcap (Linux, Max, or other UNIXs)
+* libpcap (Linux, Mac, or other UNIXs)
 
 
 Install
