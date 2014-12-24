@@ -280,12 +280,12 @@ pcap_close.argtypes = [POINTER(pcap_t)]
 # int pcap_loop(pcap_t *, int, pcap_handler, u_char *);
 pcap_loop = _pcap.pcap_loop
 pcap_loop.restype = c_int
-pcap_loop.argtypes = [POINTER(pcap_t), c_int, pcap_handler, u_char]
+pcap_loop.argtypes = [POINTER(pcap_t), c_int, pcap_handler, POINTER(u_char)]
 
 # int pcap_dispatch(pcap_t *, int, pcap_handler, u_char *);
 pcap_dispatch = _pcap.pcap_dispatch
 pcap_dispatch.restype = c_int
-pcap_dispatch.argtypes = [POINTER(pcap_t), c_int, pcap_handler, u_char]
+pcap_dispatch.argtypes = [POINTER(pcap_t), c_int, pcap_handler, POINTER(u_char)]
 
 # const u_char* pcap_next(pcap_t *, struct pcap_pkthdr *);
 pcap_next = _pcap.pcap_next
@@ -295,7 +295,7 @@ pcap_next.argtypes = [POINTER(pcap_t), POINTER(pcap_pkthdr)]
 # int pcap_next_ex(pcap_t *, struct pcap_pkthdr **, const u_char **);
 pcap_next_ex = _pcap.pcap_next_ex
 pcap_next_ex.restype = c_int
-pcap_next_ex.argtypes = [POINTER(pcap_t), POINTER(POINTER(pcap_pkthdr)), POINTER(u_char)]
+pcap_next_ex.argtypes = [POINTER(pcap_t), POINTER(POINTER(pcap_pkthdr)), POINTER(POINTER(u_char))]
 
 # void pcap_breakloop(pcap_t *);
 pcap_breakloop = _pcap.pcap_next
