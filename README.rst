@@ -21,7 +21,30 @@ Install
 Need to `sudo` when using system python.
 
 
-Example
+Example script
+=======================================================================
+::
+
+    $ ./example/recv_sample.py -d
+    1. b'eno1' (None)
+    2. b'enp0s25' (None)
+    $ sudo ./example/recv_sample.py -i 1
+    Send interface: eno1
+    listening on 1: eno1 (None)
+
+    No.1 1488642855.772344 4434[Byte]
+    No.2 1488642855.772356 4434[Byte]
+    No.3 1488642855.772436 3027[Byte]
+    No.4 1488642855.772709 60[Byte]
+    No.5 1488642855.772736 60[Byte]
+    No.6 1488642855.772847 6833[Byte]
+    No.7 1488642855.773225 60[Byte]
+    No.8 1488642855.773302 6422[Byte]
+    No.9 1488642855.773624 60[Byte]
+    No.10 1488642855.773777 6787[Byte]
+
+
+Example interactive
 =======================================================================
 ::
 
