@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ctypes import *
-from pppcap.pppcap import *
+from pppcap import *
 
 alldevs = POINTER(pcap_if_t)()
 errbuf  = create_string_buffer(PCAP_ERRBUF_SIZE)

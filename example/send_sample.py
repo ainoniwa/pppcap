@@ -3,7 +3,9 @@
 
 from ctypes import *
 from optparse import OptionParser
-from pppcap.pppcap import *
+from pppcap import *
+import sys
+
 version = u'%prog 1.1'
 
 def dev_discovery():
@@ -57,13 +59,14 @@ def generator(opts):
 
     dev = dev.contents
     print("Send interface: %s" % dev.name)
-    adhandle = pcap_open(dev.name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 1, None, errbuf)
+    if sys.platform.startswith('win'):
+        adhandle = pcap_open(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, None, errbuf)
+    else:
+        adhandle = pcap_open_live(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, errbuf)
     if (adhandle == None):
         print("\nUnable to open the adapter. %s is not supported by libcap/winpcap\n" % dev.name)
         pcap_freealldevs(alldevs)
         return
-    pcap_freealldevs(alldevs)
-
 
     buf = b"\x02\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x01\x08\x00"
     buf = b"\xff\xff\xff\xff\xff\xff\x02\x00\x00\x00\x00\x01\x08\x00"
@@ -73,8 +76,10 @@ def generator(opts):
     try:
         for i in range(opts.count):
             pkt_send(adhandle, buf)
+            print("Packet sent")
     except KeyboardInterrupt:
         print("User stop.")
+    pcap_freealldevs(alldevs)
     pcap_close(adhandle)
 
 
@@ -82,7 +87,7 @@ def main():
     p = OptionParser(version=version)
     p.add_option('-d', '--discovery', action='store_true', help="Discovery device")
     p.add_option('-i', '--interface', action='store', type='int', default=0, help="Interface number")
-    p.add_option('-c', '--count', action='store', type='int', help="Traffic send count")
+    p.add_option('-c', '--count', action='store', type='int', help="Packet send count", default=3)
     opts, args = p.parse_args()
 
     if opts.discovery:

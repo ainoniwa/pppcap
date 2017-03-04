@@ -18,13 +18,15 @@ Install
 
     $ python setup.py install
 
+Need to `sudo` when using system python.
+
 
 Example
 =======================================================================
 ::
 
     >>> from ctypes import *
-    >>> from pppcap.pppcap import *
+    >>> from pppcap import *
     >>>
     >>> alldevs = POINTER(pcap_if_t)()
     >>> errbuf  = create_string_buffer(PCAP_ERRBUF_SIZE)

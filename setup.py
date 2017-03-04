@@ -19,5 +19,5 @@ setup(
         "Programming Language :: Python",
         "Topic :: System :: Networking",
     ],
-    packages = ["pppcap"],
+    packages=['']
 )

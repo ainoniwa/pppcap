@@ -3,7 +3,10 @@
 
 from ctypes import *
 from optparse import OptionParser
-from pppcap.pppcap import *
+from pppcap import *
+import sys
+import time
+
 version = u'%prog 1.1'
 
 def dev_discovery():
@@ -53,29 +56,29 @@ def dump(opts):
 
     dev = dev.contents
     print("Send interface: %s" % dev.name)
-    adhandle = pcap_open(dev.name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 1, None, errbuf)
+
+    if sys.platform.startswith('win'):
+        adhandle = pcap_open(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, None, errbuf)
+    else:
+        adhandle = pcap_open_live(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, errbuf)
     if (adhandle == None):
         print("\nUnable to open the adapter. %s is not supported by libcap/winpcap\n" % dev.name)
         pcap_freealldevs(alldevs)
         return
-    pcap_freealldevs(alldevs)
-
-    print("listening on {}: {} ({})\n".format(opts.interface, dev.name, dev.description))
 
     pkt_no = 1
     pkt_hdr = POINTER(pcap_pkthdr)()
     pkt_data = POINTER(c_ubyte)()
 
-    import time
-    time.clock()
-
+    print("listening on {}: {} ({})\n".format(opts.interface, dev.name, dev.description))
     try:
-        while True:
-            if pcap_next_ex(adhandle, byref(pkt_hdr), byref(pkt_data)) != 0:
+        while opts.count >= pkt_no:
+            if pcap_next_ex(adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
                 print("No.{} {}.{} {}[Byte]".format(pkt_no, pkt_hdr.contents.ts.tv_sec, pkt_hdr.contents.ts.tv_usec, pkt_hdr.contents.len))
                 pkt_no += 1
     except KeyboardInterrupt:
         print("User stop.")
+    pcap_freealldevs(alldevs)
     pcap_close(adhandle)
 
 
@@ -83,7 +86,7 @@ def main():
     p = OptionParser(version=version)
     p.add_option('-d', '--discovery', action='store_true', help="Discovery device")
     p.add_option('-i', '--interface', action='store', type='int', default=0, help="Interface number")
-    p.add_option('-c', '--count', action='store', type='int', help="Traffic send count")
+    p.add_option('-c', '--count', action='store', type='int', help="Packet receive count", default=10)
     opts, args = p.parse_args()
 
     if opts.discovery:
