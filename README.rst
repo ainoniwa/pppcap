@@ -14,11 +14,12 @@ Requirement
 
 Install
 =======================================================================
+In virtualenv.
 ::
 
-    $ python setup.py install
+    (pppcap)$ python setup.py install
 
-Need to `sudo` when using system python.
+Need to `sudo` when using system global.
 
 
 Example script

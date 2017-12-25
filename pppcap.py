@@ -738,3 +738,63 @@ if HAVE_REMOTE:
     pcap_remoteact_cleanup.restype = None
     pcap_remoteact_cleanup.argtypes = None
 
+
+class RecordHdr(object):
+    def __init__(self, pkt_hdr):
+        self.ts_sec = pkt_hdr.contents.ts.tv_sec
+        self.ts_usec = pkt_hdr.contents.ts.tv_usec
+        self.incl_len = pkt_hdr.contents.caplen
+        self.orig_len = pkt_hdr.contents.len
+        self.len = pkt_hdr.contents.caplen
+
+
+class Port:
+
+    def __init__(self, port):
+        self.errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+        self.adhandle = self.__bind_port(port)
+
+
+    def send(self, buf):
+        pcap_sendpacket(self.adhandle, cast(buf, POINTER(c_ubyte)), len(buf))
+
+
+    def recv(self):
+        pkt_hdr = POINTER(pcap_pkthdr)()
+        pkt_data = POINTER(c_ubyte)()
+        if pcap_next_ex(self.adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
+            return (RecordHdr(pkt_hdr), string_at(pkt_data, pkt_hdr.contents.caplen))
+        return (None, None)
+
+
+    def __bind_port(self, port):
+        alldevs = POINTER(pcap_if_t)()
+        pcap_findalldevs(byref(alldevs), self.errbuf)
+
+        try:
+            dev = alldevs.contents
+        except:
+            raise ValueError("Unable to find the pcap devices.\nHave you network admin privilege?")
+
+        while dev:
+            if(dev.name == port):
+                break
+            if dev.next:
+                dev = dev.next.contents
+            else:
+                dev = False
+        if dev is False:
+            pcap_freealldevs(alldevs)
+            raise ValueError("Invalid port name: {}".format(port))
+
+        if sys.platform.startswith('win'):
+            adhandle = pcap_open(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, None, self.errbuf)
+        else:
+            adhandle = pcap_open_live(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, self.errbuf)
+
+        if (adhandle == None):
+            pcap_freealldevs(alldevs)
+            raise ValueError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
+        else:
+            return adhandle
+
