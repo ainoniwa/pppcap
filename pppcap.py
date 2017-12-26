@@ -774,10 +774,10 @@ class Port:
         try:
             dev = alldevs.contents
         except:
-            raise ValueError("Unable to find the pcap devices.\nHave you network admin privilege?")
+            raise OSError("Unable to find the pcap devices.\nHave you network admin privilege?")
 
         while dev:
-            if(dev.name == port):
+            if(dev.name.decode() == port):
                 break
             if dev.next:
                 dev = dev.next.contents
@@ -794,7 +794,7 @@ class Port:
 
         if (adhandle == None):
             pcap_freealldevs(alldevs)
-            raise ValueError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
+            raise RuntimeError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
         else:
             return adhandle
 
