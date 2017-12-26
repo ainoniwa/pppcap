@@ -738,6 +738,28 @@ if HAVE_REMOTE:
     pcap_remoteact_cleanup.restype = None
     pcap_remoteact_cleanup.argtypes = None
 
+#
+# NOTE: Following codes are planned to split.
+#
+
+def list_pcap_port():
+    port_list = []
+    alldevs = POINTER(pcap_if_t)()
+    errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+    pcap_findalldevs(byref(alldevs), errbuf)
+    curr_port = alldevs.contents
+
+    while curr_port:
+        port_list.append({
+            "name": None if curr_port.name is None else curr_port.name.decode(),
+            "desc": None if curr_port.description is None else curr_port.description.decode()
+        })
+        if not curr_port.next:
+            break
+        curr_port = curr_port.next.contents
+    pcap_freealldevs(alldevs)
+    return port_list
+
 
 class RecordHdr(object):
     def __init__(self, pkt_hdr):
