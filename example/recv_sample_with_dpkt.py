@@ -22,7 +22,7 @@ for i in range(10):
         print('Fail parse')
         continue
 
-    if isinstance(eth.data) == dpkt.ip.IP:
+    if isinstance(eth.data, dpkt.ip.IP):
         ip = eth.data
         src = socket.inet_ntoa(ip.src)
         dst = socket.inet_ntoa(ip.dst)
