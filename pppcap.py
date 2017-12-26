@@ -750,9 +750,9 @@ class RecordHdr(object):
 
 class Port:
 
-    def __init__(self, port):
+    def __init__(self, port, timeout=1000, promisc=PCAP_OPENFLAG_PROMISCUOUS):
         self.errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
-        self.adhandle = self.__bind_port(port)
+        self.adhandle = self.__bind_port(port, timeout, promisc)
 
 
     def send(self, buf):
@@ -767,7 +767,7 @@ class Port:
         return (None, None)
 
 
-    def __bind_port(self, port):
+    def __bind_port(self, port, timeout, promisc):
         alldevs = POINTER(pcap_if_t)()
         pcap_findalldevs(byref(alldevs), self.errbuf)
 
@@ -788,12 +788,12 @@ class Port:
             raise ValueError("Invalid port name: {}".format(port))
 
         if sys.platform.startswith('win'):
-            adhandle = pcap_open(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, None, self.errbuf)
+            adhandle = pcap_open(dev.name, 65535, promisc, timeout, None, self.errbuf)
         else:
-            adhandle = pcap_open_live(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, self.errbuf)
+            adhandle = pcap_open_live(dev.name, 65535, promisc, timeout, self.errbuf)
 
+        pcap_freealldevs(alldevs)
         if (adhandle == None):
-            pcap_freealldevs(alldevs)
             raise RuntimeError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
         else:
             return adhandle
