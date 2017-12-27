@@ -738,3 +738,84 @@ if HAVE_REMOTE:
     pcap_remoteact_cleanup.restype = None
     pcap_remoteact_cleanup.argtypes = None
 
+#
+# NOTE: Following codes are planned to split.
+#
+
+def list_pcap_port():
+    port_list = []
+    _alldevs = POINTER(pcap_if_t)()
+    _errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+    pcap_findalldevs(byref(_alldevs), _errbuf)
+    curr_port = _alldevs.contents
+
+    while curr_port:
+        port_list.append({
+            "name": None if curr_port.name is None else curr_port.name.decode(),
+            "desc": None if curr_port.description is None else curr_port.description.decode()
+        })
+        if not curr_port.next:
+            break
+        curr_port = curr_port.next.contents
+    pcap_freealldevs(_alldevs)
+    return port_list
+
+
+class RecordHdr(object):
+    def __init__(self, pkt_hdr):
+        self.ts_sec = pkt_hdr.contents.ts.tv_sec
+        self.ts_usec = pkt_hdr.contents.ts.tv_usec
+        self.incl_len = pkt_hdr.contents.caplen
+        self.orig_len = pkt_hdr.contents.len
+        self.len = pkt_hdr.contents.caplen
+
+
+class Port:
+
+    def __init__(self, port, timeout=1000, promisc=PCAP_OPENFLAG_PROMISCUOUS):
+        self._errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+        self._adhandle = self.__bind_port(port, timeout, promisc)
+
+
+    def send(self, buf):
+        pcap_sendpacket(self._adhandle, cast(buf, POINTER(c_ubyte)), len(buf))
+
+
+    def recv(self):
+        pkt_hdr = POINTER(pcap_pkthdr)()
+        pkt_data = POINTER(c_ubyte)()
+        if pcap_next_ex(self._adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
+            return (RecordHdr(pkt_hdr), string_at(pkt_data, pkt_hdr.contents.caplen))
+        return (None, None)
+
+
+    def __bind_port(self, port, timeout, promisc):
+        _alldevs = POINTER(pcap_if_t)()
+        pcap_findalldevs(byref(_alldevs), self._errbuf)
+
+        try:
+            dev = _alldevs.contents
+        except:
+            raise OSError("Unable to find the pcap devices.\nHave you network admin privilege?")
+
+        while dev:
+            if dev.name.decode() == port:
+                break
+            if not dev.next:
+                break
+            dev = dev.next.contents
+        else:
+            pcap_freealldevs(_alldevs)
+            raise ValueError("Invalid port name: {}".format(port))
+
+        if sys.platform.startswith('win'):
+            adhandle = pcap_open(dev.name, 65535, promisc, timeout, None, self._errbuf)
+        else:
+            adhandle = pcap_open_live(dev.name, 65535, promisc, timeout, self._errbuf)
+
+        pcap_freealldevs(_alldevs)
+        if adhandle is None:
+            raise RuntimeError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
+        else:
+            return adhandle
+

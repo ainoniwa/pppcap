@@ -17,8 +17,8 @@ def dev_discovery():
     try:
         dev = alldevs.contents
     except:
-        print ("Error in pcap_findalldevs: %s" % errbuf.value)
-        print ("Have you network admin privilege?\n")
+        print("Error in pcap_findalldevs: {}".format(errbuf.value))
+        print("Have you network admin privilege?\n")
         return
 
     while dev:
@@ -26,10 +26,11 @@ def dev_discovery():
         print("%d. %s (%s)" % (dev_count, dev.name, dev.description))
         dev = dev.next.contents if dev.next else False
 
-    if (dev_count==0):
-        print ("\nNo interfaces found! Make sure WinPcap is installed.\n")
+    if dev_count == 0:
+        print("\nNo interfaces found! Make sure WinPcap is installed.\n")
 
     pcap_freealldevs(alldevs)
+
 
 def pkt_send(dev, buf):
     pcap_sendpacket(dev, cast(buf, POINTER(c_ubyte)), len(buf))
@@ -38,14 +39,14 @@ def pkt_send(dev, buf):
 
 def generator(opts):
     alldevs = POINTER(pcap_if_t)()
-    errbuf  = create_string_buffer(PCAP_ERRBUF_SIZE)
+    errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
     pcap_findalldevs(byref(alldevs), errbuf)
 
     try:
         dev = alldevs.contents
     except:
-        print ("Error in pcap_findalldevs: %s" % errbuf.value)
-        print ("Have you network admin privilege?\n")
+        print("Error in pcap_findalldevs: {}".format(errbuf.value))
+        print("Have you network admin privilege?\n")
         return
 
     try:
@@ -53,7 +54,7 @@ def generator(opts):
         for i in range(opts.interface-1):
             dev = dev.contents.next
     except:
-        print ("Invalid interface number.")
+        print("Invalid interface number.")
         pcap_freealldevs(alldevs)
         return
 
@@ -63,7 +64,7 @@ def generator(opts):
         adhandle = pcap_open(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, None, errbuf)
     else:
         adhandle = pcap_open_live(dev.name, 65535, PCAP_OPENFLAG_PROMISCUOUS, 200, errbuf)
-    if (adhandle == None):
+    if adhandle is None:
         print("\nUnable to open the adapter. %s is not supported by libcap/winpcap\n" % dev.name)
         pcap_freealldevs(alldevs)
         return

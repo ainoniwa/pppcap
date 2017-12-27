@@ -5,9 +5,9 @@ from distutils.core import setup
 
 setup(
     name="pppcap",
-    version="0.1",
+    version="0.2",
     author="Ruy",
-    author_email="ruy.suzu7(at)gmail.com",
+    author_email="ruy(at)ainoniwa.net",
     url="https://github.com/ainoniwa/pppcap",
     description="Pppcap: pure python wrapper for libpcap/winpcap",
     license="MIT",
