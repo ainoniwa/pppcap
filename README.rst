@@ -61,13 +61,13 @@ Example script
 ::
 
     (dev)$ pip install pypacker
-    (dev)$ python example/interface_discovery.py
-    1. b'ens18' (None)
-    2. b'any' (b'Pseudo-device that captures on all interfaces')
-    3. b'lo' (None)
-    4. b'nflog' (b'Linux netfilter log (NFLOG) interface')
-    5. b'nfqueue' (b'Linux netfilter queue (NFQUEUE) interface')
-    6. b'usbmon1' (b'USB bus number 1')
+    (dev)$ python -c "import pprint; import pppcap; pprint.pprint(pppcap.list_pcap_port())"
+    [{'desc': None, 'name': 'ens18'},
+     {'desc': 'Pseudo-device that captures on all interfaces', 'name': 'any'},
+     {'desc': None, 'name': 'lo'},
+     {'desc': 'Linux netfilter log (NFLOG) interface', 'name': 'nflog'},
+     {'desc': 'Linux netfilter queue (NFQUEUE) interface', 'name': 'nfqueue'},
+     {'desc': 'USB bus number 1', 'name': 'usbmon1'}]
     (dev)$ python example/recv_sample_with_pypacker.py
     1514269159.755425 60[Byte]
       [ARP] who has 192.168.1.102
@@ -95,24 +95,9 @@ Example interactive
 =======================================================================
 ::
 
-    >>> from ctypes import *
     >>> from pppcap import *
-    >>>
-    >>> alldevs = POINTER(pcap_if_t)()
-    >>> errbuf  = create_string_buffer(PCAP_ERRBUF_SIZE)
-    >>> pcap_findalldevs(byref(alldevs), errbuf)
-    0
-    >>> dev = alldevs.contents
-    >>> while dev:
-    ...     print("{} ({})".format(dev.name, dev.description))
-    ...     if dev.next:
-    ...         dev = dev.next.contents
-    ...     else:
-    ...         dev = False
-    ...
-    b'\\Device\\NPF_{C05CB6F2-F965-46AC-A311-0D9787AC93EC}' (b'Microsoft')
-    b'\\Device\\NPF_{9E497729-6883-464E-A177-74178E7AB03C}' (b'Realtek USB NIC')
-    b'\\Device\\NPF_{DD007737-0821-491D-A0CD-630454C06183}' (b'TAP-Windows Adapter V9')
+    >>> list_pcap_port()
+    [{'name': '{5F8C8623-75D6-4CB1-A394-1A9195FA6B50}', 'desc': 'Microsoft'}, {'name': '{C05CB6F2-F965-46AC-A311-0D9787AC93EC}', 'desc': 'Microsoft'}, {'name': '{9E497729-6883-464E-A177-74178E7AB03C}', 'desc': 'Realtek USB NIC'}, {'name': '{DD007737-0821-491D-A0CD-630454C06183}', 'desc': 'TAP-Windows Adapter V9'}]
     >>> port = Port("\\Device\\NPF_{9E497729-6883-464E-A177-74178E7AB03C}")
     >>> hdr, buf = port.recv()
     >>> hdr.ts_sec
