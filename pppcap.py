@@ -772,9 +772,14 @@ class RecordHdr(object):
 
 class Port:
 
+    # void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
+    _C_HANDLER = CFUNCTYPE(None, POINTER(c_ubyte), POINTER(pcap_pkthdr), POINTER(c_ubyte))
+
+
     def __init__(self, port, timeout=1000, promisc=PCAP_OPENFLAG_PROMISCUOUS):
         self._errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
         self._adhandle = self.__bind_port(port, timeout, promisc)
+        self._callback = None
 
 
     def send(self, buf):
@@ -787,6 +792,33 @@ class Port:
         if pcap_next_ex(self._adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
             return (RecordHdr(pkt_hdr), string_at(pkt_data, pkt_hdr.contents.caplen))
         return (None, None)
+
+
+    def _packet_handler(self, param, pkt_hdr, buf):
+        if self._callback is not None:
+            try:
+                return self._callback(self, param, RecordHdr(pkt_hdr), string_at(buf, pkt_hdr.contents.caplen))
+            except:
+                self.capture_stop()
+        return None
+
+
+    def capture(self, callback=None, cnt=0):
+        """
+        Start packet capture.
+
+          param: callback funtion when execute per packet recieved
+          param: cnt < 1: infinit loop.
+        """
+        self._callback = callback
+        pcap_loop(self._adhandle, cnt, self._C_HANDLER(self._packet_handler), None)
+
+
+    def capture_stop(self):
+        """
+        Stop packet capture.
+        """
+        pcap_breakloop(self._adhandle)
 
 
     def __bind_port(self, port, timeout, promisc):
