@@ -744,10 +744,10 @@ if HAVE_REMOTE:
 
 def list_pcap_port():
     port_list = []
-    alldevs = POINTER(pcap_if_t)()
-    errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
-    pcap_findalldevs(byref(alldevs), errbuf)
-    curr_port = alldevs.contents
+    _alldevs = POINTER(pcap_if_t)()
+    _errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+    pcap_findalldevs(byref(_alldevs), _errbuf)
+    curr_port = _alldevs.contents
 
     while curr_port:
         port_list.append({
@@ -757,7 +757,7 @@ def list_pcap_port():
         if not curr_port.next:
             break
         curr_port = curr_port.next.contents
-    pcap_freealldevs(alldevs)
+    pcap_freealldevs(_alldevs)
     return port_list
 
 
@@ -773,49 +773,48 @@ class RecordHdr(object):
 class Port:
 
     def __init__(self, port, timeout=1000, promisc=PCAP_OPENFLAG_PROMISCUOUS):
-        self.errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
-        self.adhandle = self.__bind_port(port, timeout, promisc)
+        self._errbuf = create_string_buffer(PCAP_ERRBUF_SIZE)
+        self._adhandle = self.__bind_port(port, timeout, promisc)
 
 
     def send(self, buf):
-        pcap_sendpacket(self.adhandle, cast(buf, POINTER(c_ubyte)), len(buf))
+        pcap_sendpacket(self._adhandle, cast(buf, POINTER(c_ubyte)), len(buf))
 
 
     def recv(self):
         pkt_hdr = POINTER(pcap_pkthdr)()
         pkt_data = POINTER(c_ubyte)()
-        if pcap_next_ex(self.adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
+        if pcap_next_ex(self._adhandle, byref(pkt_hdr), byref(pkt_data)) == 1:
             return (RecordHdr(pkt_hdr), string_at(pkt_data, pkt_hdr.contents.caplen))
         return (None, None)
 
 
     def __bind_port(self, port, timeout, promisc):
-        alldevs = POINTER(pcap_if_t)()
-        pcap_findalldevs(byref(alldevs), self.errbuf)
+        _alldevs = POINTER(pcap_if_t)()
+        pcap_findalldevs(byref(_alldevs), self._errbuf)
 
         try:
-            dev = alldevs.contents
+            dev = _alldevs.contents
         except:
             raise OSError("Unable to find the pcap devices.\nHave you network admin privilege?")
 
         while dev:
-            if(dev.name.decode() == port):
+            if dev.name.decode() == port:
                 break
-            if dev.next:
-                dev = dev.next.contents
-            else:
-                dev = False
-        if dev is False:
-            pcap_freealldevs(alldevs)
+            if not dev.next:
+                break
+            dev = dev.next.contents
+        else:
+            pcap_freealldevs(_alldevs)
             raise ValueError("Invalid port name: {}".format(port))
 
         if sys.platform.startswith('win'):
-            adhandle = pcap_open(dev.name, 65535, promisc, timeout, None, self.errbuf)
+            adhandle = pcap_open(dev.name, 65535, promisc, timeout, None, self._errbuf)
         else:
-            adhandle = pcap_open_live(dev.name, 65535, promisc, timeout, self.errbuf)
+            adhandle = pcap_open_live(dev.name, 65535, promisc, timeout, self._errbuf)
 
-        pcap_freealldevs(alldevs)
-        if (adhandle == None):
+        pcap_freealldevs(_alldevs)
+        if adhandle is None:
             raise RuntimeError("Unable to open the adapter. {} is not supported by libcap/winpcap".format(dev.name))
         else:
             return adhandle
