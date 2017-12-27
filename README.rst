@@ -8,7 +8,7 @@ pppcap is pure python wrapper for libpcap/winpcap.
 
 Requirement
 =======================================================================
-* winpcap or Win10Pcap (Windows)
+* winpcap or Win10Pcap(Recv Only) (Windows)
 * libpcap (Linux, Mac, or other UNIXs)
 
 
@@ -30,8 +30,7 @@ Create virtualenv, and setcap to bind ports.
 
     $ sudo yum install python-virtualenv
     $ virtualenv dev
-    $ cd dev
-    $ . bin/activate
+    $ . dev/bin/activate
     $ sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' bin/python2
 
 
@@ -95,9 +94,15 @@ Example interactive
 =======================================================================
 ::
 
+    >>> import pprint
     >>> from pppcap import *
-    >>> list_pcap_port()
-    [{'name': '{5F8C8623-75D6-4CB1-A394-1A9195FA6B50}', 'desc': 'Microsoft'}, {'name': '{C05CB6F2-F965-46AC-A311-0D9787AC93EC}', 'desc': 'Microsoft'}, {'name': '{9E497729-6883-464E-A177-74178E7AB03C}', 'desc': 'Realtek USB NIC'}, {'name': '{DD007737-0821-491D-A0CD-630454C06183}', 'desc': 'TAP-Windows Adapter V9'}]
+    >>> pprint.pprint(list_pcap_port())
+    [{'desc': 'Microsoft',
+      'name': '\\Device\\NPF_{C05CB6F2-F965-46AC-A311-0D9787AC93EC}'},
+     {'desc': 'Realtek USB NIC',
+      'name': '\\Device\\NPF_{9E497729-6883-464E-A177-74178E7AB03C}'},
+     {'desc': 'TAP-Windows Adapter V9',
+      'name': '\\Device\\NPF_{DD007737-0821-491D-A0CD-630454C06183}'}]
     >>> port = Port("\\Device\\NPF_{9E497729-6883-464E-A177-74178E7AB03C}")
     >>> hdr, buf = port.recv()
     >>> hdr.ts_sec
@@ -108,3 +113,5 @@ Example interactive
     112
     >>> buf
     b'\xff\xff\xff\xff\xff\xffRT\x00g9!\x08\x06\x00\x01\x08\x00\x06\x04\x00\x01RT\x00g9!\xc0\xa8\x01\x01\x00\x00\x00\x00\x00\x00\xc0\xa8\x01f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    >>> port.send(buf)
+
