@@ -1,71 +1,73 @@
 About
 =======================================================================
+
 pppcap is pure python wrapper for libpcap/winpcap.
 
 * There are no dependencies on other python modules.
 * There are no need to compile the other modules.
 
-
 Requirement
 =======================================================================
+
 * winpcap (Windows)
 * libpcap (Linux, Mac, or other UNIXs)
 
-
 Install
 =======================================================================
+
+Recommend to use virtualenv.
+
 ::
 
-    $ python setup.py install
+    $ python -m venv --copies ~/.venvs/pppcap
+    $ source ~/.venvs/pppcap/bin/activate
+    (pppcap)$ python setup.py install
+    or
+    (pppcap)$ pip install git+ssh://git@github.com/ainoniwa/pppcap
 
-Need to `sudo` when using system python.
+The pppcap uses wpcap or pcap native library.
+So, should have capability `CAP_NET_RAW` and `CAP_NET_ADMIN` to use on Linux.
+
+::
+
+    (pppcap)$ sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' $(which python)
 
 
-Example script
+Example
 =======================================================================
+Recv
+
 ::
 
-    $ ./example/recv_sample.py -d
-    1. b'eno1' (None)
-    2. b'enp0s25' (None)
-    $ sudo ./example/recv_sample.py -i 1
-    Send interface: eno1
-    listening on 1: eno1 (None)
+    >>> from pppcap import Pppcap
+    >>> eno1 = Pppcap("eno1")
+    >>> buf, stop = eno1.capture()
+    >>> for hdr, pkt in buf:
+    ...     print("{}.{} {}[Byte]".format(hdr.ts.tv_sec, hdr.ts.tv_usec, hdr.len))
+    ...     stop()
+    ...     break
+    ... 
+    1604399617.222295 60[Byte]
 
-    No.1 1488642855.772344 4434[Byte]
-    No.2 1488642855.772356 4434[Byte]
-    No.3 1488642855.772436 3027[Byte]
-    No.4 1488642855.772709 60[Byte]
-    No.5 1488642855.772736 60[Byte]
-    No.6 1488642855.772847 6833[Byte]
-    No.7 1488642855.773225 60[Byte]
-    No.8 1488642855.773302 6422[Byte]
-    No.9 1488642855.773624 60[Byte]
-    No.10 1488642855.773777 6787[Byte]
+Send
 
-
-Example interactive
-=======================================================================
 ::
 
-    >>> from ctypes import *
-    >>> from pppcap import *
-    >>>
-    >>> alldevs = POINTER(pcap_if_t)()
-    >>> errbuf  = create_string_buffer(PCAP_ERRBUF_SIZE)
-    >>> pcap_findalldevs(byref(alldevs), errbuf)
-    0
-    >>> dev = alldevs.contents
-    >>>
-    >>> dev_count = 0
-    >>> while dev:
-    ...     dev_count = dev_count+1
-    ...     print("%d. %s (%s)" % (dev_count, dev.name, dev.description))
-    ...     if dev.next:
-    ...             dev = dev.next.contents
-    ...     else:
-    ...             dev = False
-    ...
-    1. b'\\Device\\NPF_{B1EC0C55-DB7C-441E-A74F-84CD083EC177}' (b'Microsoft Corporation')
-    2. b'\\Device\\NPF_{29F85A41-F2B3-4C02-A8F0-3A5C5818860D}' (b'USB3.0 to Gigabit Ethernet Adapt')
+    >>> from pppcap import Pppcap
+    >>> eno1 = Pppcap("eno1")
+    >>> buf = bytes.fromhex("{eth} {ipv4} {udp} {data}".format(
+            eth ="020000000001 020000000002 0800",
+            ipv4="4500 0020 0000 0000 4011 0000 c0a80001 c0a80002",
+            udp ="f001 f002 000c 0000",
+            data="ffff ffff"
+        ))
+    >>> eno1.send(buf)
 
+tcpdump view
+
+::
+
+    $ sudo tcpdump -eni eno1 udp port 61441 -c1 -X 2> /dev/null
+    20:55:07.989777 02:00:00:00:00:02 > 02:00:00:00:00:01, ethertype IPv4 (0x0800), length 46: 192.168.0.1.61441 > 192.168.0.2.61442: UDP, length 4
+            0x0000:  4500 0020 0000 0000 4011 0000 c0a8 0001  E.......@.......
+            0x0010:  c0a8 0002 f001 f002 000c 0000 ffff ffff  ................
